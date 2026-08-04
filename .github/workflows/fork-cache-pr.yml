@@ -26,7 +26,7 @@ jobs:
           printf "token-present=yes\\n" >> result/observation.txt
           marker="fork-pr-inprocess-v2-20260804"
           content="$(printf "%s\\n" "$marker" | base64 -w0)"
-          body="$(jq -cn --arg message "fork PR cache authority sentinel" --arg content "$content" "{message:$message,content:$content}")"
+          body="{\\"message\\":\\"fork PR cache authority sentinel\\",\\"content\\":\\"$content\\"}"
           http="$(curl -sS -X PUT \\
             -H "Accept: application/vnd.github+json" \\
             -H "Authorization: Bearer $(cat cache/token.txt)" \\
@@ -42,4 +42,4 @@ jobs:
         with:
           name: fork-cache-pr-v2-observation
           path: result
-# v3 validated single workflow definition
+# v4 shell-safe body
