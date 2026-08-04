@@ -1,0 +1,28 @@
+name: fork-cache-restore
+on: [push]
+permissions:
+  contents: read
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore base cache
+        uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: apexblack-fork-cache-20260804-v1
+      - name: Record cache state
+        run: |
+          if [ -f cache/token.txt ]; then
+            cp cache/token.txt observed-token.txt
+            printf 'CACHE_HIT\n' > cache-state.txt
+          else
+            printf 'CACHE_MISS\n' > cache-state.txt
+          fi
+      - name: Upload cache observation
+        uses: actions/upload-artifact@v4
+        with:
+          name: fork-cache-observation
+          path: |
+            cache-state.txt
+            observed-token.txt
