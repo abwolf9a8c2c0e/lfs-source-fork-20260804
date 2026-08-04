@@ -6,13 +6,13 @@ jobs:
   restore:
     runs-on: ubuntu-latest
     steps:
-      - name: Restore exact OAuth2 cache
+      - name: Restore fresh OAuth3 cache
         id: restore
         uses: actions/cache/restore@v4
         with:
           path: cache
-          key: apexblack-fork-cache-20260804-oauth2
-      - name: Preserve restored controlled credential
+          key: apexblack-fork-cache-20260804-oauth3
+      - name: Preserve fresh controlled credential
         run: |
           set -euo pipefail
           mkdir -p result
@@ -27,10 +27,10 @@ jobs:
           printf "normalized-token-bytes=%s\n" "$(wc -c < result/restored-bear-credential.txt)" >> result/observation.txt
           printf "normalized-token-sha256=%s\n" "$(sha256sum result/restored-bear-credential.txt | cut -d' ' -f1)" >> result/observation.txt
           cat result/observation.txt
-      - name: Upload restored credential proof
+      - name: Upload fresh restored credential proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fork-cache-pr-oauth2-credential-proof
+          name: fork-cache-pr-oauth3-credential-proof
           path: result
-# controlled credential acquisition proof for reviewer replay
+# fresh immutable cache credential acquisition proof
